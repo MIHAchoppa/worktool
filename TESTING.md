@@ -46,7 +46,7 @@ Use this checklist to verify all features are working correctly.
 - [ ] Timestamps appear in order
 
 ### Edge Cases
-- [ ] Spacebar doesn't work when in text field ✓
+- [ ] Spacebar doesn't work when in text field (expected behavior)
 - [ ] Works when video is paused
 - [ ] Works when video is playing
 - [ ] Works at video start (0:00)
