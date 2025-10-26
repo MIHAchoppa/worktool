@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Timestamp Overlay</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 16px;
+      background: #f8f9fa;
+      height: 100vh;
+      overflow: hidden;
+    }
+    
+    .header {
+      margin-bottom: 16px;
+    }
+    
+    h1 {
+      font-size: 18px;
+      color: #202124;
+      margin-bottom: 8px;
+    }
+    
+    .video-info {
+      font-size: 12px;
+      color: #5f6368;
+      margin-bottom: 12px;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    
+    button {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .btn-primary {
+      background: #4285f4;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #357ae8;
+    }
+    
+    .btn-danger {
+      background: #ea4335;
+      color: white;
+    }
+    
+    .btn-danger:hover {
+      background: #d33828;
+    }
+    
+    .btn-secondary {
+      background: #f1f3f4;
+      color: #202124;
+    }
+    
+    .btn-secondary:hover {
+      background: #e8eaed;
+    }
+    
+    .btn-success {
+      background: #34a853;
+      color: white;
+    }
+    
+    .btn-success:hover {
+      background: #2d9448;
+    }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .section {
+      background: white;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .section-title {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: #202124;
+    }
+    
+    .timestamps-list {
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    
+    .timestamp-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px;
+      margin-bottom: 4px;
+      background: #f8f9fa;
+      border-radius: 4px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .timestamp-item:hover {
+      background: #e8eaed;
+    }
+    
+    .timestamp-time {
+      color: #4285f4;
+      font-weight: 500;
+    }
+    
+    .status {
+      padding: 8px 12px;
+      background: #e8f0fe;
+      color: #1967d2;
+      border-radius: 4px;
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+    
+    .status.recording {
+      background: #fce8e6;
+      color: #c5221f;
+    }
+    
+    .transcription {
+      max-height: 200px;
+      overflow-y: auto;
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 4px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #202124;
+      white-space: pre-wrap;
+    }
+    
+    .questions-list {
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    
+    .question-item {
+      padding: 8px;
+      margin-bottom: 6px;
+      background: #f8f9fa;
+      border-left: 3px solid #4285f4;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #202124;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 20px;
+      color: #5f6368;
+      font-size: 13px;
+    }
+    
+    .api-key-section {
+      margin-bottom: 12px;
+    }
+    
+    .api-key-input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #dadce0;
+      border-radius: 4px;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    
+    .help-text {
+      font-size: 11px;
+      color: #5f6368;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🎥 Video Timestamp Tool</h1>
+    <div class="video-info">
+      <span id="videoStatus">Waiting for video...</span>
+      <span id="videoTime"></span>
+    </div>
+  </div>
+
+  <div class="section api-key-section">
+    <div class="section-title">Groq API Configuration</div>
+    <input 
+      type="password" 
+      id="apiKey" 
+      class="api-key-input" 
+      placeholder="Enter Groq API Key"
+    />
+    <button id="saveApiKey" class="btn-secondary">Save API Key</button>
+    <div class="help-text">Get your API key from: https://console.groq.com/</div>
+  </div>
+
+  <div class="controls">
+    <button id="recordBtn" class="btn-primary">🎤 Start Recording</button>
+    <button id="transcribeBtn" class="btn-success" disabled>📝 Transcribe</button>
+  </div>
+
+  <div id="statusMessage" class="status" style="display: none;"></div>
+
+  <div class="section">
+    <div class="section-title">Timestamps (Press Spacebar)</div>
+    <div id="timestampsList" class="timestamps-list">
+      <div class="empty-state">No timestamps yet. Press Spacebar to add.</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Transcription</div>
+    <div id="transcription" class="transcription">
+      <div class="empty-state">Recording will appear here after transcription...</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Generated Questions</div>
+    <div id="questionsList" class="questions-list">
+      <div class="empty-state">Questions about the video will appear here...</div>
+    </div>
+  </div>
+
+  <script src="overlay.js"></script>
+</body>
+</html>
